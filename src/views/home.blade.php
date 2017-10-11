@@ -24,7 +24,7 @@
         <div class="col-lg-6"> 
             <div class="card">
                 <!-- Tab panes -->
-                <div class="tab-content">                   
+                <div class="tab-content">
                     <!--second tab-->
                     <div class="card-block">
                         <form action = "{{ route('AdminMenuAdd') }}" method = "POST">
@@ -34,6 +34,7 @@
                                 @endforeach
                             </select>
                             <button type = "submit" class = "btn btn-success btn-block">Добавить</button>
+                            {{ csrf_field() }}
                         </form>
                     </div>
                 </div>
