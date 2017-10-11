@@ -30,7 +30,7 @@ class AdminMenuController extends Controller
 
     public function getPackages()
     {
-        $this->scandir_recursive(base_path()."/packages/selfreliance");
+        $this->scandir_recursive(realpath(__DIR__ . '/../..'));
         $decodeArrayJson = array();
         foreach ($this->dirResult as $result) {
             array_push($decodeArrayJson, json_decode(File::get($result)));
