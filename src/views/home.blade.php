@@ -30,7 +30,7 @@
                         <form action = "{{ route('AdminMenuAdd') }}" method = "POST">
                             <select class="col-12" id="role" name="selected_package[]" multiple size="10">
                                 @foreach($new_packages as $package)
-                                    <option value = "{{ $package->package }}:{{ $package->name }}">{{ $package->name }}</option>
+                                    <option value = "{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
                                 @endforeach
                             </select>
                             <button type = "submit" class = "btn btn-success btn-block">Добавить</button>

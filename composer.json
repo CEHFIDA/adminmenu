@@ -1,7 +1,7 @@
 {
   "name": "selfreliance/adminmenu",
   "type": "library",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Menu for adminamazing",
   "keywords": ["admin", "menu", "laravel"],
   "homepage": "https://github.com/selfrelianceme/adminmenu",
@@ -21,8 +21,8 @@
   },
   "require": {
     "php": ">=5.6.0",
-    "selfreliance/adminamazing": ">=1.0.0",
-    "selfreliance/fixroles": ">=1.0.0"
+    "selfreliance/adminamazing": "^1.0",
+    "selfreliance/fixroles": "^1.0"
   },
   "require-dev": {
     "phpunit/phpunit": "~4.8"

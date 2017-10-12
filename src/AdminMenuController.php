@@ -66,7 +66,8 @@ class AdminMenuController extends Controller
             \DB::table('admin__menu')->insert(
                 [
                     'title' => $info[1], 
-                    'package' => $info[0], 
+                    'package' => $info[0],
+                    'icon' => $info[2],
                     'parent' => 0, 
                     'sort' => 0
                 ]

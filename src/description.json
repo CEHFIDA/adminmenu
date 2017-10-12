@@ -1,4 +1,5 @@
 {
   "package": "adminmenu",
-  "name": "Меню"
+  "name": "Меню",
+  "icon": "mdi mdi-menu"
 }
