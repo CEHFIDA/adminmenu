@@ -1,7 +1,7 @@
 {
   "name": "selfreliance/adminmenu",
   "type": "library",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Menu for adminamazing",
   "keywords": ["admin", "menu", "laravel"],
   "homepage": "https://github.com/selfrelianceme/adminmenu",

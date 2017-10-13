@@ -21,19 +21,19 @@
             </div>
         </div>
         @if(count($new_packages) > 0)
-        <div class="col-lg-6"> 
+        <div class="col-lg-3"> 
             <div class="card">
                 <!-- Tab panes -->
                 <div class="tab-content">
                     <!--second tab-->
                     <div class="card-block">
-                        <form action = "{{ route('AdminMenuAdd') }}" method = "POST">
-                            <select class="col-12" id="role" name="selected_package[]" multiple size="10">
+                        <form action = "{{ route('AdminMenuAddPackage') }}" method = "POST" class="form-horizontal">
+                            <select class="form-control col-12" id="role" name="selected_package[]" multiple size="{{ count($new_packages) }}">
                                 @foreach($new_packages as $package)
-                                    <option value = "{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
+                                    <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
                                 @endforeach
                             </select>
-                            <button type = "submit" class = "btn btn-success btn-block">Добавить</button>
+                            <button type="submit" class="btn btn-success btn-block">Добавить</button>
                             {{ csrf_field() }}
                         </form>
                     </div>
@@ -41,5 +41,23 @@
             </div>
         </div>
         @endif
+        <div class="col-lg-3"> 
+            <div class="card">
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <!--second tab-->
+                    <div class="card-block">
+                        <form action="{{route('AdminMenuAddStub')}}" method="POST" class="form-horizontal">          
+                            <div class="form-group">
+                                <label for="subject">Название раздела</label>
+                                <input type="text" class="form-control" name="title" id="title">
+                            </div>
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-success btn-block">Создать</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection

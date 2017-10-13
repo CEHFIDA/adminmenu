@@ -58,7 +58,7 @@ class AdminMenuController extends Controller
         return view('adminmenu::home')->with(['tree' => $result, 'new_packages' => $new_packages]);
     }
 
-    public function add(Request $request)
+    public function add_package(Request $request)
     {
         foreach($request['selected_package'] as $selected)
         {
@@ -73,6 +73,25 @@ class AdminMenuController extends Controller
                 ]
             );
         }
+        return redirect()->route('AdminMenuHome');
+    }
+
+    public function add_stub(Request $request)
+    {
+        $this->validate([
+            'title' => 'required|min:2'
+        ]);
+
+
+        \DB::table('admin__menu')->insert(
+            [
+                'title' => $request['title'],
+                'package' => 'nope',
+                'icon' => '',
+                'parent' => 0,
+                'sort' => 0
+            ]
+        );
         return redirect()->route('AdminMenuHome');
     }
 
