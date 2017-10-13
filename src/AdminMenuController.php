@@ -78,7 +78,7 @@ class AdminMenuController extends Controller
 
     public function add_stub(Request $request)
     {
-        $this->validate([
+        $this->validate($request, [
             'title' => 'required|min:2'
         ]);
 
