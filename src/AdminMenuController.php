@@ -4,8 +4,8 @@ namespace Selfreliance\adminmenu;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use DB;
 use File;
-use Selfreliance\Adminamazing\AdminController;
 
 class AdminMenuController extends Controller
 {
@@ -28,20 +28,22 @@ class AdminMenuController extends Controller
         }
     }
 
-    public function getPackages()
+    public function getPackages($dir)
     {
-        $this->scandir_recursive(realpath(__DIR__ . '/../..'));
+        $this->scandir_recursive($dir);
         $decodeArrayJson = array();
         foreach ($this->dirResult as $result) {
             array_push($decodeArrayJson, json_decode(File::get($result)));
         }
+        $this->dirResult = array();
         return $decodeArrayJson;
     }
     
     public function index()
     {
-        $menu = \DB::table('admin__menu')->orderBy('sort', 'asc')->get();
-        $get_packages = $this->getPackages();
+        $menu = DB::table('admin__menu')->orderBy('sort', 'asc')->get();
+        $packages = $this->getPackages(realpath(__DIR__ . '/../..'));
+        // $dev_packages = $this->getPackages(base_path("/packages"));
 
         $current_packages = array();
         $menu->each(function($row) use (&$current_packages){
@@ -49,76 +51,100 @@ class AdminMenuController extends Controller
         });
 
         $new_packages = array();
-        foreach($get_packages as $package)
+        foreach($packages as $p1)
         {
-            if(!in_array($package->package, $current_packages)) $new_packages[] = $package;
+            if(!in_array($p1->package, $current_packages)) $new_packages[] = $p1;
         }
 
-        $result = AdminController::makeMenu($menu, null, 2);
+        $result = makeMenu($menu, null, 2);
         return view('adminmenu::home')->with(['tree' => $result, 'new_packages' => $new_packages]);
     }
 
-    public function add_package(Request $request)
+    public function action(Request $request, $name = null)
     {
-        foreach($request['selected_package'] as $selected)
-        {
-            $info = explode(':', $selected);
-            \DB::table('admin__menu')->insert(
-                [
-                    'title' => $info[1], 
-                    'package' => $info[0],
-                    'icon' => $info[2],
-                    'parent' => 0, 
+        $method = $request->method();
+        if($method == 'POST'){// Create package or stub
+            if($name == 'package'){
+                foreach($request['selected_package'] as $selected){
+                    $info = explode(':', $selected);
+
+                    DB::table('admin__menu')->insert([
+                        'title' => $info[1],
+                        'package' => $info[0],
+                        'icon' => $info[2],
+                        'parent' => 0,
+                        'sort' => 0
+                    ]);
+                }
+            }else if($name == 'stub'){
+                $this->validate($request, [
+                    'title' => 'required|min:2'
+                ]);
+
+                DB::table('admin__menu')->insert([
+                    'title' => $request['title'],
+                    'package' => 'nope',
+                    'icon' => '',
+                    'parent' => 0,
                     'sort' => 0
-                ]
-            );
+                ]);
+            }
+        }else if($method == 'PUT'){// Update tree or title
+            if($name == 'tree'){
+                $tree = json_decode(json_encode($request['tree']));
+                return $this->update_tree($tree);
+            }else if($name == 'title'){
+                $this->validate($request, [
+                    'id' => 'required',
+                    'title' => 'required|min:2'
+                ]);
+
+                DB::table('admin__menu')->where(
+                    'id', $request->input('id')
+                )->update(
+                    ['title' => $request->input('title')]
+                );
+            }
+        }else if($method == 'DELETE'){// Delete category
+            $this->validate($request, [
+                'id' => 'required'
+            ]);
+
+            DB::table('admin__menu')->where(
+                'id', $request->input('id')
+            )->delete();
+
+            $childs = DB::table('admin__menu')->where(
+                'parent', $request->input('id')
+            )->get();
+
+            if(count($childs) > 0) $childs->delete();
         }
         return redirect()->route('AdminMenuHome');
     }
 
-    public function add_stub(Request $request)
-    {
-        $this->validate([
-            'title' => 'required|min:2'
-        ]);
-
-
-        \DB::table('admin__menu')->insert(
-            [
-                'title' => $request['title'],
-                'package' => 'nope',
-                'icon' => '',
-                'parent' => 0,
-                'sort' => 0
-            ]
-        );
-        return redirect()->route('AdminMenuHome');
-    }
-
-    public function delete($id)
-    {
-        \DB::table('admin__menu')->where('id', $id)->delete();
-        \DB::table('admin__menu')->where('parent', $id)->delete();
-        return redirect()->route('AdminMenuHome');
-    }
-
-    public function update_tree(Request $request)
-    {
-        $tree = json_decode(json_encode($request['tree']));
-        return $this->output_tree($tree);
-    }
-
-    public function output_tree($menu,$parent = 0)
+    public function update_tree($menu,$parent = 0)
     {
         $i = 1;
         foreach ($menu as $item)
         {
             if(isset($item->children))
             {
-                \DB::table('admin__menu')->where('id', $item->id)->update(['parent' => $parent,'sort' => $i]);
-                $this->output_tree($item->children,$item->id);
+                DB::table('admin__menu')->where(
+                    'id', $item->id
+                )->update(
+                    ['parent' => $parent,'sort' => $i]
+                );
+
+                $this->update_tree($item->children,$item->id);
             }
-            else if(isset($item->id)) \DB::table('admin__menu')->where('id', $item->id)->update(['parent' => $parent,'sort' => $i]);
+            else if(isset($item->id)){
+                DB::table('admin__menu')->where(
+                    'id', $item->id
+                )->update(
+                    ['parent' => $parent,'sort' => $i]
+                );
+            }
             $i++;
         }
         return \Response::json(["success" => true,"msg" => "Succesfuly update!"], "200");
