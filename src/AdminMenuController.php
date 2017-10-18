@@ -42,22 +42,36 @@ class AdminMenuController extends Controller
     public function index()
     {
         $menu = DB::table('admin__menu')->orderBy('sort', 'asc')->get();
-        $packages = $this->getPackages(realpath(__DIR__ . '/../..'));
-        // $dev_packages = $this->getPackages(base_path("/packages"));
+        $new_packages = $this->getPackages(realpath(__DIR__ . '/../..'));
+        $dev_packages = $this->getPackages(base_path("/packages"));
 
         $current_packages = array();
         $menu->each(function($row) use (&$current_packages){
             $current_packages[] = $row->package;
         });
 
-        $new_packages = array();
-        foreach($packages as $p1)
+        $new = array();
+        foreach($new_packages as $p1)
         {
-            if(!in_array($p1->package, $current_packages)) $new_packages[] = $p1;
+            if(!in_array($p1->package, $current_packages)) $new[] = $p1;
+        }
+
+        $dev = array();
+        foreach($dev_packages as $p2)
+        {
+            if(!in_array($p2->package, $current_packages)) 
+            {
+                $p2->name .= ' [dev]';
+                $new[] = $p2;
+            }
         }
 
         $result = makeMenu($menu, null, 2);
-        return view('adminmenu::home')->with(['tree' => $result, 'new_packages' => $new_packages]);
+        return view('adminmenu::home')->with([
+            'tree' => $result, 
+            'new_packages' => $new,
+            'dev_packages' => $dev
+        ]);
     }
 
     public function action(Request $request, $name = null)

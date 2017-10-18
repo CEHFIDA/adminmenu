@@ -47,6 +47,7 @@
                                                 </div>
                                                 <div class="modal-footer">
                                                     {{ method_field('DELETE') }}
+                                                    {{ csrf_field() }}
                                                     <input type="hidden" name="id" value="">
                                                     <button type="submit" class="btn btn-danger">Удалить</button>
                                                 </div>
@@ -69,8 +70,11 @@
                     <!--second tab-->
                     <div class="card-block">
                         <form action = "{{ route('AdminMenuAdd', 'package') }}" method = "POST" class="form-horizontal">
-                            <select class="form-control col-12" id="role" name="selected_package[]" multiple size="{{ count($new_packages) }}">
+                            <select class="form-control col-12" id="role" name="selected_package[]" multiple size="{{ count($new_packages+$dev_packages) }}">
                                 @foreach($new_packages as $package)
+                                    <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
+                                @endforeach
+                                @foreach($dev_packages as $package)
                                     <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
                                 @endforeach
                             </select>
