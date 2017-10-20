@@ -24,6 +24,8 @@
                                                     <div class="form-group">
                                                         <label for="title">Название раздела</label>
                                                         <input type="text" class="form-control" name="title" id="title">
+                                                        <label for="icon">Иконка раздела</label>
+                                                        <input type="text" class="form-control" name="icon" id="icon">
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">

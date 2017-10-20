@@ -42,7 +42,7 @@
             }
             $menu .= '</li>';
         }else if($type == 2){
-            $info = json_encode(['id' => $category->id, 'title' => str_replace(' ', '&nbsp;', $category->title)]);
+            $info = json_encode(['id' => $category->id, 'title' => str_replace(' ', '&nbsp;', $category->title), 'icon' => str_replace(' ', '&nbsp;', $category->icon)]);
             $menu = '<li class="dd-item dd3-item" data-id="'.$category->id.'">';
             $menu .= '<div class="dd-handle dd3-handle"></div>';
             $menu .= '<div class="dd3-content">'.$category->title.' <a href="#editModal" class="edit_toggle" data-rel='.$info.' data-toggle="modal"><i class="fa fa-pencil text-inverse m-r-10"></i></a>';

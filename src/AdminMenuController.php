@@ -110,13 +110,17 @@ class AdminMenuController extends Controller
             }else if($name == 'title'){
                 $this->validate($request, [
                     'id' => 'required',
-                    'title' => 'required|min:2'
+                    'title' => 'required|min:2',
+                    'icon' => 'required'
                 ]);
 
                 DB::table('admin__menu')->where(
                     'id', $request->input('id')
                 )->update(
-                    ['title' => $request->input('title')]
+                    [
+                        'title' => $request->input('title'),
+                        'icon' => $request->input('icon')
+                    ]
                 );
             }
         }else if($method == 'DELETE'){// Delete category
