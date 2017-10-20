@@ -117,8 +117,8 @@ class AdminMenuController extends Controller
                     'id', $request->input('id')
                 )->update(
                     [
-                        'title' => str_replace('&nbsp;', ' ', $request->input('title')),
-                        'icon' => ($request->input('icon')) ? str_replace('&nbsp;', ' ', $request->input('icon')) : ''
+                        'title' => str_replace('&nbsp;', ' ', htmlentities($request->input('title'), null, 'utf-8')),
+                        'icon' => ($request->input('icon')) ? str_replace('&nbsp;', ' ', htmlentities($request->input('icon'), null, 'utf-8')) : ''
                     ]
                 );
             }
