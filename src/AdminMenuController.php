@@ -11,6 +11,9 @@ class AdminMenuController extends Controller
 {
     private $dirResult = array();
 
+    /**
+     * Scan directory with recursive method
+    */
     public function scandir_recursive($dir) {
         $dir = rtrim($dir, DIRECTORY_SEPARATOR);
         $result = array();
@@ -28,6 +31,11 @@ class AdminMenuController extends Controller
         }
     }
 
+    /**
+     * Get packages
+     * @param string $dir
+     * @return result scan
+    */
     public function getPackages($dir)
     {
         $this->scandir_recursive($dir);
@@ -36,14 +44,19 @@ class AdminMenuController extends Controller
             array_push($decodeArrayJson, json_decode(File::get($result)));
         }
         $this->dirResult = array();
+        
         return $decodeArrayJson;
     }
-    
+ 
+    /**
+     * Index
+     * @return view home with tree, new_package, dev_packages
+    */   
     public function index()
     {
         $menu = DB::table('admin__menu')->orderBy('sort', 'asc')->get();
         $new_packages = $this->getPackages(realpath(__DIR__ . '/../..'));
-        $dev_packages = $this->getPackages(base_path("/packages"));
+        $dev_packages = $this->getPackages(base_path("packages"));
 
         $current_packages = array();
         $menu->each(function($row) use (&$current_packages){
@@ -67,6 +80,7 @@ class AdminMenuController extends Controller
         }
 
         $result = makeMenu($menu, null, 2);
+
         return view('adminmenu::home')->with([
             'tree' => $result, 
             'new_packages' => $new,
@@ -74,73 +88,98 @@ class AdminMenuController extends Controller
         ]);
     }
 
-    public function action(Request $request, $name = null)
+    /**
+     * Create item
+     * @param request $request
+     * @param string $type
+     * @return mixed
+    */
+    public function create_item(Request $request, $type)
     {
-        $method = $request->method();
-        if($method == 'POST'){// Create package or stub
-            if($name == 'package'){
-                foreach($request['selected_package'] as $selected){
-                    $info = explode(':', $selected);
-
-                    DB::table('admin__menu')->insert([
-                        'title' => $info[1],
-                        'package' => $info[0],
-                        'icon' => $info[2],
-                        'parent' => 0,
-                        'sort' => 0
-                    ]);
-                }
-            }else if($name == 'stub'){
-                $this->validate($request, [
-                    'title' => 'required|min:2'
-                ]);
+        if($type == 'package')
+        {
+            foreach($request['selected_package'] as $selected)
+            {
+                $info = explode(':', $selected);
 
                 DB::table('admin__menu')->insert([
-                    'title' => $request['title'],
-                    'package' => 'nope',
-                    'icon' => '',
+                    'title' => $info[1],
+                    'package' => $info[0],
+                    'icon' => $info[2],
                     'parent' => 0,
                     'sort' => 0
                 ]);
             }
-        }else if($method == 'PUT'){// Update tree or title
-            if($name == 'tree'){
-                $tree = json_decode(json_encode($request['tree']));
-                return $this->update_tree($tree);
-            }else if($name == 'title'){
-                $this->validate($request, [
-                    'id' => 'required',
-                    'title' => 'required|min:2'
-                ]);
-
-                DB::table('admin__menu')->where(
-                    'id', $request->input('id')
-                )->update(
-                    [
-                        'title' => str_replace('&nbsp;', ' ', htmlentities($request->input('title'), null, 'utf-8')),
-                        'icon' => ($request->input('icon')) ? str_replace('&nbsp;', ' ', htmlentities($request->input('icon'), null, 'utf-8')) : ''
-                    ]
-                );
-            }
-        }else if($method == 'DELETE'){// Delete category
+        }
+        else if($type == 'stub')
+        {
             $this->validate($request, [
-                'id' => 'required'
+                'title' => 'required|min:2'
+            ]);
+
+            DB::table('admin__menu')->insert([
+                'title' => $request['title'],
+                'package' => 'nope',
+                'icon' => '',
+                'parent' => 0,
+                'sort' => 0
+            ]);
+        }
+        else return redirect()->route('AdminMenuHome');
+        return redirect()->route('AdminMenuHome')->with('status', 'Раздел создан!');
+    }
+
+    /**
+     * Update
+     * @param request $request
+     * @param string $type
+     * @return mixed
+    */
+    public function update(Request $request, $type)
+    {
+        if($type == 'tree') return $this->update_tree(json_decode(json_encode($request['tree'])));
+        else if($type == 'category')
+        {
+            $this->validate($request, [
+                'id' => 'required',
+                'title' => 'required|min:2'
             ]);
 
             DB::table('admin__menu')->where(
                 'id', $request->input('id')
-            )->delete();
-
-            $childs = DB::table('admin__menu')->where(
-                'parent', $request->input('id')
-            )->get();
-
-            if(count($childs) > 0) $childs->delete();
+            )->update(
+                [
+                    'title' => str_replace('&nbsp;', ' ', htmlentities($request->input('title'), null, 'utf-8')),
+                    'icon' => ($request->input('icon')) ? str_replace('&nbsp;', ' ', htmlentities($request->input('icon'), null, 'utf-8')) : ''
+                ]
+            );
         }
-        return redirect()->route('AdminMenuHome');
+        else return redirect()->route('AdminMenuHome');
+        return redirect()->route('AdminMenuHome')->with('status', 'Раздел обновлен!');
     }
 
-    public function update_tree($menu,$parent = 0)
+    /**
+     * Destroy category
+     * @param int $id
+     * @return mixed
+    */
+    public function destroy($id)
+    {
+        DB::table('admin__menu')->where('id', $id)->delete();
+
+        $childs = DB::table('admin__menu')->where('parent', $id)->get();
+        if(count($childs) > 0) $childs->delete();
+
+        return redirect()->route('AdminMenuHome')->with('status', 'Раздел удален!');
+    }
+
+    /**
+     * Update tree
+     * @param json $menu
+     * @param int $parent
+     * @return json response
+    */
+    public function update_tree($menu, $parent = 0)
     {
         $i = 1;
         foreach ($menu as $item)
@@ -164,6 +203,10 @@ class AdminMenuController extends Controller
             }
             $i++;
         }
-        return \Response::json(["success" => true,"msg" => "Succesfuly update!"], "200");
+
+        return \Response::json([
+            "success" => true,
+            "msg" => "Succesfuly update!"
+        ], "200");
     }
 }
