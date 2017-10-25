@@ -110,6 +110,8 @@ class AdminMenuController extends Controller
                     'sort' => 0
                 ]);
             }
+
+            flash()->success('Раздел создан!');
         }
         else if($type == 'stub')
         {
@@ -124,9 +126,10 @@ class AdminMenuController extends Controller
                 'parent' => 0,
                 'sort' => 0
             ]);
+
+            flash()->success('Раздел создан!');
         }
-        else return redirect()->route('AdminMenuHome');
-        return redirect()->route('AdminMenuHome')->with('status', 'Раздел создан!');
+        return redirect()->route('AdminMenuHome');
     }
 
     /**
@@ -153,9 +156,10 @@ class AdminMenuController extends Controller
                     'icon' => ($request->input('icon')) ? str_replace('&nbsp;', ' ', htmlentities($request->input('icon'), null, 'utf-8')) : ''
                 ]
             );
+
+            flash()->success('Раздел обновлен!');
         }
-        else return redirect()->route('AdminMenuHome');
-        return redirect()->route('AdminMenuHome')->with('status', 'Раздел обновлен!');
+        return redirect()->route('AdminMenuHome');
     }
 
     /**
@@ -170,7 +174,9 @@ class AdminMenuController extends Controller
         $childs = DB::table('admin__menu')->where('parent', $id)->get();
         if(count($childs) > 0) $childs->delete();
 
-        return redirect()->route('AdminMenuHome')->with('status', 'Раздел удален!');
+        flash()->success('Раздел удален!');
+
+        return redirect()->route('AdminMenuHome');
     }
 
     /**
