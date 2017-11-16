@@ -1,6 +1,6 @@
 @extends('adminamazing::teamplate')
 
-@section('pageTitle', trans('translate-menu::menu.editingMenu'))
+@section('pageTitle', 'Редактирование меню')
 @section('content')
     <div class="row">
         <div class="col-lg-6"> 
@@ -18,9 +18,9 @@
                                             </div>
                                             <div class="modal-body">
                                                 <div class="form-group">
-                                                    <label for="title">{{ trans('translate-menu::menu.sectionName') }}</label>
+                                                    <label for="title">Название раздела</label>
                                                     <input type="text" class="form-control" name="title" id="title">
-                                                    <label for="icon">{{ trans('translate-menu::menu.sectionIcon') }}</label>
+                                                    <label for="icon">Иконка раздела</label>
                                                     <input type="text" class="form-control" name="icon" id="icon">
                                                 </div>
                                             </div>
@@ -28,7 +28,7 @@
                                                 {{ method_field('PUT') }}
                                                 {{ csrf_field() }}
                                                 <input type="hidden" name="id" value="">
-                                                <button type="submit" class="btn btn-success">{{ trans('translate-menu::menu.update') }}</button>
+                                                <button type="submit" class="btn btn-success">Обновить</button>
                                             </div>
                                         </form>
                                     </div>
@@ -57,7 +57,7 @@
                                 @endif
                             </select>
                             {{ csrf_field() }}
-                            <button type="submit" class="btn btn-success btn-block">{{ trans('translate-menu::menu.add') }}</button>
+                            <button type="submit" class="btn btn-success btn-block">Перенести раздел</button>
                         </form>
                     </div>
                 </div>
@@ -70,11 +70,11 @@
                     <div class="card-block">
                         <form action="{{route('AdminMenuCreate', 'stub')}}" method="POST" class="form-horizontal">          
                             <div class="form-group">
-                                <label for="title">{{ trans('translate-menu::menu.sectionName') }}</label>
+                                <label for="title">Название раздела</label>
                                 <input type="text" class="form-control" name="title" id="title">
                             </div>
                             {{ csrf_field() }}
-                            <button type="submit" class="btn btn-success btn-block">{{ trans('translate-menu::menu.create') }}</button>
+                            <button type="submit" class="btn btn-success btn-block">Добавить раздел</button>
                         </form>
                     </div>
                 </div>
@@ -86,7 +86,7 @@
         <script src="{{ asset('vendor/adminamazing/assets/plugins/nestable/jquery.nestable.js') }}"></script>
         <script>
             var route = '{{ route('AdminMenuDelete') }}';
-            message = '{{ trans('translate-menu::menu.deleteConfirm') }}';
+            message = 'Вы точно хотите удалить данный раздел со всеми его подпунктами?';
             
             $('.edit_toggle').on('click', function(e){
                 var menu = jQuery.parseJSON( $(this).attr('data-rel') );
