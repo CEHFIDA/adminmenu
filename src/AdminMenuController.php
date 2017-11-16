@@ -5,7 +5,6 @@ namespace Selfreliance\adminmenu;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use DB;
-use File;
 
 class AdminMenuController extends Controller
 {
@@ -41,7 +40,7 @@ class AdminMenuController extends Controller
         $this->scandir_recursive($dir);
         $decodeArrayJson = array();
         foreach ($this->dirResult as $result) {
-            array_push($decodeArrayJson, json_decode(File::get($result)));
+            array_push($decodeArrayJson, json_decode(\File::get($result)));
         }
         $this->dirResult = array();
         
@@ -56,7 +55,6 @@ class AdminMenuController extends Controller
     {
         $menu = DB::table('admin__menu')->orderBy('sort', 'asc')->get();
         $new_packages = $this->getPackages(realpath(__DIR__ . '/../..'));
-        $dev_packages = $this->getPackages(base_path("packages"));
 
         $current_packages = array();
         $menu->each(function($row) use (&$current_packages){
@@ -70,12 +68,16 @@ class AdminMenuController extends Controller
         }
 
         $dev = array();
-        foreach($dev_packages as $p2)
+        if(\File::isDirectory(base_path("packages")))
         {
-            if(!in_array($p2->package, $current_packages)) 
+            $dev_packages = $this->getPackages(base_path("packages"));
+            foreach($dev_packages as $p2)
             {
-                $p2->name .= ' [dev]';
-                $new[] = $p2;
+                if(!in_array($p2->package, $current_packages)) 
+                {
+                    $p2->name .= ' [dev]';
+                    $new[] = $p2;
+                }
             }
         }
 
@@ -98,20 +100,23 @@ class AdminMenuController extends Controller
     {
         if($type == 'package')
         {
-            foreach($request['selected_package'] as $selected)
+            if(!is_null($request['selected_package']))
             {
-                $info = explode(':', $selected);
+                foreach($request['selected_package'] as $selected)
+                {
+                    $info = explode(':', $selected);
 
-                DB::table('admin__menu')->insert([
-                    'title' => $info[1],
-                    'package' => $info[0],
-                    'icon' => $info[2],
-                    'parent' => 0,
-                    'sort' => 0
-                ]);
+                    DB::table('admin__menu')->insert([
+                        'title' => $info[1],
+                        'package' => $info[0],
+                        'icon' => $info[2],
+                        'parent' => 0,
+                        'sort' => 0
+                    ]);
+                }
+
+                flash()->success( trans('translate-menu::menu.sectionCreated') );
             }
-
-            flash()->success('Раздел создан!');
         }
         else if($type == 'stub')
         {
@@ -127,7 +132,7 @@ class AdminMenuController extends Controller
                 'sort' => 0
             ]);
 
-            flash()->success('Раздел создан!');
+            flash()->success( trans('translate-menu::menu.sectionCreated') );
         }
         return redirect()->route('AdminMenuHome');
     }
@@ -157,7 +162,7 @@ class AdminMenuController extends Controller
                 ]
             );
 
-            flash()->success('Раздел обновлен!');
+            flash()->success( trans('translate-menu::menu.sectionUpdated') );
         }
         return redirect()->route('AdminMenuHome');
     }
@@ -174,7 +179,7 @@ class AdminMenuController extends Controller
         $childs = DB::table('admin__menu')->where('parent', $id)->get();
         if(count($childs) > 0) $childs->delete();
 
-        flash()->success('Раздел удален!');
+        flash()->success( trans('translate-menu::menu.sectionDeleted') );
 
         return redirect()->route('AdminMenuHome');
     }

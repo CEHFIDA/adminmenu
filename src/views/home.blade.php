@@ -1,11 +1,7 @@
 @extends('adminamazing::teamplate')
 
-@section('pageTitle', 'Редактирование меню')
+@section('pageTitle', trans('translate-menu::menu.editingMenu'))
 @section('content')
-    <script>
-    var route = '{{ route('AdminMenuDelete') }}';
-    var message = 'Вы точно хотите удалить данный раздел со всеми его подпунктами?';
-    </script>
     <div class="row">
         <div class="col-lg-6"> 
             <div class="card">
@@ -22,9 +18,9 @@
                                             </div>
                                             <div class="modal-body">
                                                 <div class="form-group">
-                                                    <label for="title">Название раздела</label>
+                                                    <label for="title">{{ trans('translate-menu::menu.sectionName') }}</label>
                                                     <input type="text" class="form-control" name="title" id="title">
-                                                    <label for="icon">Иконка раздела</label>
+                                                    <label for="icon">{{ trans('translate-menu::menu.sectionIcon') }}</label>
                                                     <input type="text" class="form-control" name="icon" id="icon">
                                                 </div>
                                             </div>
@@ -32,7 +28,7 @@
                                                 {{ method_field('PUT') }}
                                                 {{ csrf_field() }}
                                                 <input type="hidden" name="id" value="">
-                                                <button type="submit" class="btn btn-success">Изменить</button>
+                                                <button type="submit" class="btn btn-success">{{ trans('translate-menu::menu.update') }}</button>
                                             </div>
                                         </form>
                                     </div>
@@ -44,7 +40,7 @@
                 </div>
             </div>
         </div>
-        @if(count($new_packages) > 0 || count($dev_packages) > 0)
+        @if(count($new_packages) > 0)
         <div class="col-lg-3"> 
             <div class="card">
                 <div class="tab-content">
@@ -54,12 +50,14 @@
                                 @foreach($new_packages as $package)
                                     <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
                                 @endforeach
-                                @foreach($dev_packages as $package)
-                                    <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
-                                @endforeach
+                                @if(count($dev_packages) > 0)
+                                    @foreach($dev_packages as $package)
+                                        <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
+                                    @endforeach
+                                @endif
                             </select>
                             {{ csrf_field() }}
-                            <button type="submit" class="btn btn-success btn-block">Добавить</button>
+                            <button type="submit" class="btn btn-success btn-block">{{ trans('translate-menu::menu.add') }}</button>
                         </form>
                     </div>
                 </div>
@@ -72,15 +70,75 @@
                     <div class="card-block">
                         <form action="{{route('AdminMenuCreate', 'stub')}}" method="POST" class="form-horizontal">          
                             <div class="form-group">
-                                <label for="subject">Название раздела</label>
+                                <label for="title">{{ trans('translate-menu::menu.sectionName') }}</label>
                                 <input type="text" class="form-control" name="title" id="title">
                             </div>
                             {{ csrf_field() }}
-                            <button type="submit" class="btn btn-success btn-block">Создать</button>
+                            <button type="submit" class="btn btn-success btn-block">{{ trans('translate-menu::menu.create') }}</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script src="{{ asset('vendor/adminamazing/assets/plugins/nestable/jquery.nestable.js') }}"></script>
+        <script>
+            var route = '{{ route('AdminMenuDelete') }}';
+            message = '{{ trans('translate-menu::menu.deleteConfirm') }}';
+            
+            $('.edit_toggle').on('click', function(e){
+                var menu = jQuery.parseJSON( $(this).attr('data-rel') );
+                $('#editModal').find('input[name=title]').val(menu.title);
+                $('#editModal').find('input[name=icon]').val(menu.icon);
+                $('#editModal').find('input[type=hidden][name=id]').val(menu.id);
+            });
+            
+            var updateOutput = function(e) {
+                var list = e.length ? e : $(e.target),
+                    output = list.data('output');
+
+                $.ajax({
+                        url: '{{route('AdminMenuUpdate', 'tree')}}',
+                        method: 'PUT',
+                        data: {
+                            tree: list.nestable('serialize')
+                        },
+                        headers: {
+                            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(res) {
+                            console.log(res);
+                        }
+                });
+
+                if (window.JSON) {           
+                    output.val(window.JSON.stringify(list.nestable('serialize'))); //, null, 2));
+                } else {
+                    output.val('JSON browser support required for this demo.');
+                }
+            };
+
+            $('#nestable2').nestable({
+                group: 1
+            }).on('change', updateOutput);
+
+            updateOutput($('#nestable2').data('output', $('#nestable-output')));
+
+            $('#nestable-menu').on('click', function(e) {
+                var target = $(e.target),
+                    action = target.data('action');
+
+                if (action === 'expand-all') {
+                    $('.dd').nestable('expandAll');
+                }
+                if (action === 'collapse-all') {
+                    $('.dd').nestable('collapseAll');
+                }
+            });
+
+            $('#nestable-menu').nestable();
+        </script>
+    @endpush
 @endsection
