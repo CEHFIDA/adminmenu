@@ -14,11 +14,9 @@ class AdminMenuServiceProvider extends ServiceProvider
     public function boot()
     {
         include __DIR__.'/routes.php';
-        include __DIR__.'/library/Menu.php';
         $this->app->make('Selfreliance\Adminmenu\AdminMenuController');
         $this->loadViewsFrom(__DIR__.'/views', 'adminmenu');
         $this->loadMigrationsFrom(__DIR__.'/migrations');
-        $this->loadTranslationsFrom(__DIR__.'/resources/lang', 'translate-menu');
     }
 
     /**
@@ -28,6 +26,8 @@ class AdminMenuServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->bind('menu', function(){
+            return new \Selfreliance\Adminmenu\Menu();
+        });
     }
 }

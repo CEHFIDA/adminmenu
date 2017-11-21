@@ -8,94 +8,55 @@ use DB;
 
 class AdminMenuController extends Controller
 {
-    private $dirResult = array();
-
-    /**
-     * Scan directory with recursive method
-    */
-    public function scandir_recursive($dir) {
-        $dir = rtrim($dir, DIRECTORY_SEPARATOR);
-        $result = array();
-        foreach (scandir($dir) as $node) {
-            if ($node !== '.' and $node !== '..') {
-                if($node == "description.json") {
-                    array_push($this->dirResult, $dir."/".$node);
-                }
-                if (is_dir($dir . DIRECTORY_SEPARATOR . $node)) {
-                    $this->scandir_recursive($dir . DIRECTORY_SEPARATOR . $node, $result);
-                } else {
-                    $result[$node][] = $dir . DIRECTORY_SEPARATOR . $node;
-                }
-            }
-        }
-    }
-
-    /**
-     * Get packages
-     * @param string $dir
-     * @return result scan
-    */
     public function getPackages($dir)
     {
-        $this->scandir_recursive($dir);
-        $decodeArrayJson = array();
-        foreach ($this->dirResult as $result) {
-            array_push($decodeArrayJson, json_decode(\File::get($result)));
+        $descriptions = collect([]);
+        $files = \File::allFiles($dir);
+        foreach($files as $file)
+        {
+            if($file->getFileName() == 'description.json')
+            {
+                $descriptions->push(json_decode(\File::get($file)));
+            }
         }
-        $this->dirResult = array();
-        
-        return $decodeArrayJson;
+        return $descriptions;
     }
- 
-    /**
-     * Index
-     * @return view home with tree, new_package, dev_packages
-    */   
+
     public function index()
     {
         $menu = DB::table('admin__menu')->orderBy('sort', 'asc')->get();
-        $new_packages = $this->getPackages(realpath(__DIR__ . '/../..'));
+        $new = $this->getPackages(realpath(__DIR__ . '/../..'));
 
         $current_packages = array();
         $menu->each(function($row) use (&$current_packages){
             $current_packages[] = $row->package;
         });
 
-        $new = array();
-        foreach($new_packages as $p1)
+        $new_packages = array();
+        foreach($new as $p1)
         {
-            if(!in_array($p1->package, $current_packages)) $new[] = $p1;
+            if(!in_array($p1->package, $current_packages)) $new_packages[] = $p1;
         }
 
-        $dev = array();
+        $dev_packages = array();
         if(\File::isDirectory(base_path("packages")))
         {
-            $dev_packages = $this->getPackages(base_path("packages"));
-            foreach($dev_packages as $p2)
+            $dev = $this->getPackages(base_path("packages"));
+            foreach($dev as $p2)
             {
                 if(!in_array($p2->package, $current_packages)) 
                 {
                     $p2->name .= ' [dev]';
-                    $new[] = $p2;
+                    $dev_packages[] = $p2;
                 }
             }
         }
 
-        $result = makeMenu($menu, null, 2);
+        $tree = \Menu::make($menu, null, 2);
 
-        return view('adminmenu::home')->with([
-            'tree' => $result, 
-            'new_packages' => $new,
-            'dev_packages' => $dev
-        ]);
+        return view('adminmenu::home', compact('new_packages', 'dev_packages', 'tree'));
     }
 
-    /**
-     * Create item
-     * @param request $request
-     * @param string $type
-     * @return mixed
-    */
     public function create_item(Request $request, $type)
     {
         if($type == 'package')
@@ -115,7 +76,7 @@ class AdminMenuController extends Controller
                     ]);
                 }
 
-                flash()->success( trans('translate-menu::menu.sectionCreated') );
+                flash()->success('Раздел успешно создан');
             }
         }
         else if($type == 'stub')
@@ -132,17 +93,11 @@ class AdminMenuController extends Controller
                 'sort' => 0
             ]);
 
-            flash()->success( trans('translate-menu::menu.sectionCreated') );
+            flash()->success('Раздел успешно создан');
         }
         return redirect()->route('AdminMenuHome');
     }
 
-    /**
-     * Update
-     * @param request $request
-     * @param string $type
-     * @return mixed
-    */
     public function update(Request $request, $type)
     {
         if($type == 'tree') return $this->update_tree(json_decode(json_encode($request['tree'])));
@@ -162,16 +117,11 @@ class AdminMenuController extends Controller
                 ]
             );
 
-            flash()->success( trans('translate-menu::menu.sectionUpdated') );
+            flash()->success('Раздел обновлен');
         }
         return redirect()->route('AdminMenuHome');
     }
 
-    /**
-     * Destroy category
-     * @param int $id
-     * @return mixed
-    */
     public function destroy($id)
     {
         DB::table('admin__menu')->where('id', $id)->delete();
@@ -179,17 +129,11 @@ class AdminMenuController extends Controller
         $childs = DB::table('admin__menu')->where('parent', $id)->get();
         if(count($childs) > 0) $childs->delete();
 
-        flash()->success( trans('translate-menu::menu.sectionDeleted') );
+        flash()->success('Раздел удален');
 
         return redirect()->route('AdminMenuHome');
     }
 
-    /**
-     * Update tree
-     * @param json $menu
-     * @param int $parent
-     * @return json response
-    */
     public function update_tree($menu, $parent = 0)
     {
         $i = 1;

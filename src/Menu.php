@@ -1,17 +1,21 @@
 <?php
 
-    function makeMenu($menu, $pages, $type)
+namespace Selfreliance\adminmenu;
+
+class Menu
+{
+    public function make($menu, $pages, $type)
     {
         $new = array();
         foreach ($menu as $a)
         {
             $new[$a->parent][] = $a;
         }
-        $tree = createTree($new, $new[0], $pages);
-        return showTree($tree, $type);
+        $tree = $this->createTree($new, $new[0], $pages);
+        return $this->showTree($tree, $type);
     }
 
-    function createTree(&$list, $parent, &$accessible)
+    protected function createTree(&$list, $parent, &$accessible)
     {
         $tree = array();
         foreach ($parent as $k=>$l)
@@ -20,7 +24,7 @@
             {
                 if(isset($list[$l->id]))
                 {
-                    $l->children = createTree($list, $list[$l->id], $accessible);
+                    $l->children = $this->createTree($list, $list[$l->id], $accessible);
                 }
                 $tree[] = $l;
             }
@@ -28,7 +32,7 @@
             {
                 if(isset($list[$l->id]))
                 {
-                    $l->children = createTree($list, $list[$l->id], $accessible);
+                    $l->children = $this->createTree($list, $list[$l->id], $accessible);
                 }
                 $tree[] = $l;
             }
@@ -36,7 +40,7 @@
         return $tree;
     }
 
-    function getTree($category, $type)
+    protected function getTree($category, $type)
     {
         if($type == 1)
         {
@@ -47,7 +51,7 @@
             $menu .= '<a class="has-arrow'.$check.'" href="'.url($package).'" aria-expanded="false">'.$icon.$category->title.'</a>';
             if(isset($category->children))
             {
-                $menu .= '<ul aria-expanded="false" class="collapse">'.showTree($category->children, $type).'</ul>';
+                $menu .= '<ul aria-expanded="false" class="collapse">'.$this->showTree($category->children, $type).'</ul>';
             }
             $menu .= '</li>';
         }
@@ -60,21 +64,22 @@
             $menu .= '<div class="pull-right"><a href="#deleteModal" class="delete_toggle" data-id='.$category->id.' data-toggle="modal"><i class="fa fa-close text-danger"></i></a></div></div>';
             if(isset($category->children)) 
             {
-                $menu .= '<ol class="dd-list">'.showTree($category->children, $type).'</ol>';
+                $menu .= '<ol class="dd-list">'.$this->showTree($category->children, $type).'</ol>';
             }
         }
         return $menu;
     }
 
-    function showTree($data, $type)
+    protected function showTree($data, $type)
     {
         $string = '';
         foreach($data as $item)
         {
             if(!empty($item->package)) 
             {
-                $string .= getTree($item, $type);
+                $string .= $this->getTree($item, $type);
             }
         }
         return $string;
     }
+}

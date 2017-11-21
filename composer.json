@@ -16,7 +16,10 @@
     "laravel": {
         "providers": [
             "Selfreliance\\Adminmenu\\AdminMenuServiceProvider"
-        ]
+        ],
+        "aliases": {
+            "Menu": "Selfreliance\\Adminmenu\\Facades\\Menu"
+        }
      }
   },
   "require": {

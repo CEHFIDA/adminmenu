@@ -46,7 +46,7 @@
                 <div class="tab-content">
                     <div class="card-block">
                         <form action = "{{ route('AdminMenuCreate', 'package') }}" method = "POST" class="form-horizontal">
-                            <select class="form-control col-12" id="role" name="selected_package[]" multiple size="{{ count($new_packages+$dev_packages) }}">
+                            <select class="form-control col-12" id="role" name="selected_package[]" multiple size="{{ count($new_packages) + count($dev_packages) }}">
                                 @foreach($new_packages as $package)
                                     <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
                                 @endforeach
