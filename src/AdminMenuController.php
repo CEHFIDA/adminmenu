@@ -4,28 +4,21 @@ namespace Selfreliance\adminmenu;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use DB;
+use Selfreliance\Adminmenu\Models\AdminMenu;
 
 class AdminMenuController extends Controller
 {
-    public function getPackages($dir)
+    private $menu;
+
+    public function __construct(AdminMenu $model)
     {
-        $descriptions = collect([]);
-        $files = \File::allFiles($dir);
-        foreach($files as $file)
-        {
-            if($file->getFileName() == 'description.json')
-            {
-                $descriptions->push(json_decode(\File::get($file)));
-            }
-        }
-        return $descriptions;
+        $this->menu = $model;
     }
 
     public function index()
     {
-        $menu = DB::table('admin__menu')->orderBy('sort', 'asc')->get();
-        $new = $this->getPackages(realpath(__DIR__ . '/../..'));
+        $menu = $this->menu->orderBy('sort', 'asc')->get();
+        $new = self::getPackages(realpath(__DIR__ . '/../..'));
 
         $current_packages = array();
         $menu->each(function($row) use (&$current_packages){
@@ -57,111 +50,130 @@ class AdminMenuController extends Controller
         return view('adminmenu::home', compact('new_packages', 'dev_packages', 'tree'));
     }
 
-    public function create_item(Request $request, $type)
+    public function addPackages(Request $request)
     {
-        if($type == 'package')
+        if(!is_null($request['selected_packages']))
         {
-            if(!is_null($request['selected_package']))
+            foreach($request['selected_packages'] as $selected)
             {
-                foreach($request['selected_package'] as $selected)
-                {
-                    $info = explode(':', $selected);
+                $info = explode(':', $selected);
 
-                    DB::table('admin__menu')->insert([
-                        'title' => $info[1],
-                        'package' => $info[0],
-                        'icon' => $info[2],
-                        'parent' => 0,
-                        'sort' => 0
-                    ]);
-                }
+                $data = [
+                    'title' => $info[1],
+                    'package' => $info[0],
+                    'icon' => $info[2],
+                    'parent' => 0,
+                    'sort' => 0
+                ];
 
-                flash()->success('Раздел успешно создан');
+                $this->menu->create($data);
             }
-        }
-        else if($type == 'stub')
-        {
-            $this->validate($request, [
-                'title' => 'required|min:2'
-            ]);
 
-            DB::table('admin__menu')->insert([
-                'title' => $request['title'],
-                'package' => 'nope',
-                'icon' => '',
-                'parent' => 0,
-                'sort' => 0
-            ]);
-
-            flash()->success('Раздел успешно создан');
+            flash()->success('Раздел создан');
         }
+
         return redirect()->route('AdminMenuHome');
     }
 
-    public function update(Request $request, $type)
+    public function createStub(Request $request)
     {
-        if($type == 'tree') return $this->update_tree(json_decode(json_encode($request['tree'])));
-        else if($type == 'category')
-        {
-            $this->validate($request, [
-                'id' => 'required',
-                'title' => 'required|min:2'
-            ]);
+        $this->validate($request, [
+            'title' => 'required|min:2'
+        ]);
 
-            DB::table('admin__menu')->where(
-                'id', $request->input('id')
-            )->update(
-                [
-                    'title' => str_replace('&nbsp;', ' ', htmlentities($request->input('title'), null, 'utf-8')),
-                    'icon' => ($request->input('icon')) ? str_replace('&nbsp;', ' ', htmlentities($request->input('icon'), null, 'utf-8')) : ''
-                ]
-            );
+        $data = [
+            'title' => $request['title'],
+            'package' => 'nope',
+            'icon' => '',
+            'parent' => 0,
+            'sort' => 0
+        ];
 
-            flash()->success('Раздел обновлен');
-        }
+        $this->menu->create($data);
+
+        flash()->success('Раздел создан');
+
         return redirect()->route('AdminMenuHome');
+    }
+
+    public function updateCategory($id, Request $request)
+    {
+        $this->validate($request, [
+            'title' => 'required|min:2'
+        ]);
+
+        $item = $this->menu->findOrFail($id);
+
+        $data = [
+            'title' => $this->menu->normalSpace($request['title']),
+            'icon' => ($request['icon']) ? $this->menu->normalSpace($request['icon']) : ''
+        ];
+
+        $item->update($data);
+
+        flash()->success('Раздел обновлен');
+
+        return redirect()->route('AdminMenuHome');
+    }
+
+    public function updateTree(Request $request)
+    {
+        return $this->treeSynchronization(json_decode(json_encode($request['tree'])));
     }
 
     public function destroy($id)
     {
-        DB::table('admin__menu')->where('id', $id)->delete();
+        $item = $this->menu->findOrFail($id);
+        $item->delete();
 
-        $childs = DB::table('admin__menu')->where('parent', $id)->get();
-        if(count($childs) > 0) $childs->delete();
+        $childs = AdminMenu::where('parent', $id)->get();
+        if(count($childs) > 0)
+        {
+            $childs->delete();
+        }
 
         flash()->success('Раздел удален');
 
         return redirect()->route('AdminMenuHome');
     }
 
-    public function update_tree($menu, $parent = 0)
+    public function treeSynchronization($tree, $parent = 0)
     {
         $i = 1;
-        foreach ($menu as $item)
+        foreach($tree as $item)
         {
             if(isset($item->children))
             {
-                DB::table('admin__menu')->where(
-                    'id', $item->id
-                )->update(
-                    ['parent' => $parent,'sort' => $i]
-                );
+                $this->menu->where('id', $item->id)->update([
+                    'parent' => $parent,
+                    'sort' => $i
+                ]);
 
-                $this->update_tree($item->children,$item->id);
+                self::treeSynchronization($item->children,$item->id);
             }
-            else if(isset($item->id)){
-                DB::table('admin__menu')->where(
-                    'id', $item->id
-                )->update(
-                    ['parent' => $parent,'sort' => $i]
-                );
+            else if(isset($item->id))
+            {
+                $this->menu->where('id', $item->id)->update([
+                    'parent' => $parent,
+                    'sort' => $i
+                ]);
             }
+
             $i++;
         }
-
-        return \Response::json([
-            "success" => true,
-            "msg" => "Succesfuly update!"
-        ], "200");
     }
+
+    public function getPackages($dir)
+    {
+        $descriptions = collect([]);
+        $files = \File::allFiles($dir);
+        foreach($files as $file)
+        {
+            if($file->getFileName() == 'description.json')
+            {
+                $descriptions->push(json_decode(\File::get($file)));
+            }
+        }
+        return $descriptions;
+    }    
 }

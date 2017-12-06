@@ -2,51 +2,51 @@
 
 @section('pageTitle', 'Редактирование меню')
 @section('content')
+    <div class="modal fade" id="editModal" aria-hidden="true" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ route('AdminMenuUpdateCategory') }}" method="POST" class="form-horizontal">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="title">Название раздела</label>
+                            <input type="text" class="form-control" name="title" id="title">
+                            <label for="icon">Иконка раздела</label>
+                            <input type="text" class="form-control" name="icon" id="icon">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        {{ method_field('PUT') }}
+                        {{ csrf_field() }}
+                        <input type="hidden" name="id" value="">
+                        <button type="submit" class="btn btn-success">Обновить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col-lg-6"> 
             <div class="card">
                 <div class="tab-content">
                     <div class="card-block">
                         <div class="myadmin-dd-empty dd" id="nestable2">
-                            <ol class="dd-list">{!!$tree!!}</ol>
-                            <div class="modal fade" id="editModal" aria-hidden="true" style="display: none;">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form action="{{ route('AdminMenuUpdate', 'category') }}" method="POST" class="form-horizontal">
-                                            <div class="modal-header">
-                                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="form-group">
-                                                    <label for="title">Название раздела</label>
-                                                    <input type="text" class="form-control" name="title" id="title">
-                                                    <label for="icon">Иконка раздела</label>
-                                                    <input type="text" class="form-control" name="icon" id="icon">
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                {{ method_field('PUT') }}
-                                                {{ csrf_field() }}
-                                                <input type="hidden" name="id" value="">
-                                                <button type="submit" class="btn btn-success">Обновить</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                            <ol class="dd-list">{!! $tree !!}</ol>
                             <textarea style="display:none;" id="nestable-output" type="hidden"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        @if(count($new_packages) > 0)
+        @if(count($new_packages) > 0 || count($dev_packages) > 0)
         <div class="col-lg-3"> 
             <div class="card">
                 <div class="tab-content">
                     <div class="card-block">
-                        <form action = "{{ route('AdminMenuCreate', 'package') }}" method = "POST" class="form-horizontal">
-                            <select class="form-control col-12" id="role" name="selected_package[]" multiple size="{{ count($new_packages) + count($dev_packages) }}">
+                        <form action="{{ route('AdminMenuAddPackages') }}" method="POST" class="form-horizontal">
+                            <select class="form-control col-12" id="role" name="selected_packages[]" multiple size="{{ count($new_packages) + count($dev_packages) }}">
                                 @foreach($new_packages as $package)
                                     <option value="{{ $package->package }}:{{ $package->name }}:{{ $package->icon }}">{{ $package->name }}</option>
                                 @endforeach
@@ -68,7 +68,7 @@
             <div class="card">
                 <div class="tab-content">
                     <div class="card-block">
-                        <form action="{{route('AdminMenuCreate', 'stub')}}" method="POST" class="form-horizontal">          
+                        <form action="{{ route('AdminMenuCreateStub') }}" method="POST" class="form-horizontal">          
                             <div class="form-group">
                                 <label for="title">Название раздела</label>
                                 <input type="text" class="form-control" name="title" id="title">
@@ -99,18 +99,20 @@
                 var list = e.length ? e : $(e.target),
                     output = list.data('output');
 
-                $.ajax({
-                        url: '{{route('AdminMenuUpdate', 'tree')}}',
-                        method: 'PUT',
-                        data: {
-                            tree: list.nestable('serialize')
-                        },
-                        headers: {
-                            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        success: function(res) {
-                            console.log(res);
-                        }
+                 $.ajax({
+                    url: '{{ route('AdminMenuUpdateTree') }}',
+                    method: 'PUT',
+                    data: {
+                        tree: list.nestable('serialize')
+                    },
+                    headers: {
+                        'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        
+                    }, error: function(xhr, status, error) {
+                        alert(error);
+                    }
                 });
 
                 if (window.JSON) {           
