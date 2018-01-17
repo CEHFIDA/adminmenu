@@ -96,13 +96,13 @@ class AdminMenuController extends Controller
         return redirect()->route('AdminMenuHome');
     }
 
-    public function updateCategory($id, Request $request)
+    public function updateCategory(Request $request)
     {
         $this->validate($request, [
             'title' => 'required|min:2'
         ]);
 
-        $item = $this->menu->findOrFail($id);
+        $item = $this->menu->findOrFail($request['id']);
 
         $data = [
             'title' => $this->menu->normalSpace($request['title']),
